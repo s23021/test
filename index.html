@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>オセロAI付き</title>
+<style>
+  body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; text-align: center; margin: 0; padding: 30px; }
+  table { border-collapse: collapse; margin: 20px auto; }
+  td { width: 50px; height: 50px; background: #27ae60; border: 2px solid #2c3e50; cursor: pointer; }
+  .black { background: black; border-radius: 50%; width: 40px; height: 40px; margin: auto; }
+  .white { background: white; border-radius: 50%; width: 40px; height: 40px; margin: auto; }
+  .ai { background: red; border-radius: 50%; width: 40px; height: 40px; margin: auto; }
+  .highlight { background: #f1c40f !important; }
+</style>
+</head>
+<body>
+<h1>オセロ AI対戦</h1>
+<table id="board"></table>
+<p id="turn">黒の番です</p>
+<p id="result"></p>
+<script>
+const board = document.getElementById('board');
+const size = 8;
+let turn = 'black';
+
+function createBoard() {
+  for (let y = 0; y < size; y++) {
+    const row = board.insertRow();
+    for (let x = 0; x < size; x++) {
+      const cell = row.insertCell();
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+      cell.addEventListener('click', () => placeStone(cell));
+    }
+  }
+  putStone(3,3,'white'); putStone(4,4,'white');
+  putStone(3,4,'black'); putStone(4,3,'black');
+  highlightValidMoves();
+}
+
+function putStone(x, y, color) {
+  const cell = board.rows[y].cells[x];
+  const stone = document.createElement('div');
+  stone.className = color;
+  cell.innerHTML = '';
+  cell.appendChild(stone);
+}
+
+function placeStone(cell) {
+  if (turn !== 'black') return;
+  const x = parseInt(cell.dataset.x);
+  const y = parseInt(cell.dataset.y);
+  const flips = getFlippableStones(x, y, turn);
+  if (flips.length === 0) return;
+
+  putStone(x, y, 'black');
+  flips.forEach(c => putStone(c.x, c.y, 'black'));
+  checkGameEnd();
+  turn = 'white';
+  document.getElementById('turn').textContent = '白の番です';
+  highlightValidMoves();
+  setTimeout(aiMove, 500);
+}
+
+function aiMove() {
+  let moves = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (getFlippableStones(x, y, 'white').length > 0) {
+        moves.push({x, y});
+      }
+    }
+  }
+  if (moves.length === 0) {
+    turn = 'black';
+    document.getElementById('turn').textContent = '黒の番です';
+    highlightValidMoves();
+    return;
+  }
+  const move = moves[Math.floor(Math.random() * moves.length)];
+  const flips = getFlippableStones(move.x, move.y, 'white');
+  putStone(move.x, move.y, 'ai');
+
+  // 2秒後に赤→白へ
+  setTimeout(() => putStone(move.x, move.y, 'white'), 2000);
+
+  flips.forEach(c => putStone(c.x, c.y, 'white'));
+  checkGameEnd();
+  turn = 'black';
+  document.getElementById('turn').textContent = '黒の番です';
+  highlightValidMoves();
+}
+
+function getFlippableStones(x, y, color) {
+  if (board.rows[y].cells[x].children.length) return [];
+  const directions = [
+    {dx:-1,dy:-1},{dx:0,dy:-1},{dx:1,dy:-1},
+    {dx:-1,dy:0},            {dx:1,dy:0},
+    {dx:-1,dy:1},{dx:0,dy:1},{dx:1,dy:1}
+  ];
+  let result = [];
+  directions.forEach(dir => {
+    let nx = x + dir.dx, ny = y + dir.dy;
+    let stones = [];
+    while (nx>=0 && ny>=0 && nx<size && ny<size) {
+      const cell = board.rows[ny].cells[nx];
+      if (!cell.firstChild) break;
+      let cls = cell.firstChild.className;
+      if (color === 'white' && (cls === 'black')) {
+        stones.push({x:nx, y:ny});
+      } else if (color === 'black' && (cls === 'white' || cls === 'ai')) {
+        stones.push({x:nx, y:ny});
+      } else {
+        if (stones.length && ((color === 'white' && cls === 'white') || (color === 'black' && cls === 'black'))) {
+          result = result.concat(stones);
+        }
+        break;
+      }
+      nx += dir.dx; ny += dir.dy;
+    }
+  });
+  return result;
+}
+
+function highlightValidMoves() {
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      const cell = board.rows[y].cells[x];
+      cell.classList.remove('highlight');
+      if (turn==='black' && getFlippableStones(x, y, 'black').length > 0) {
+        cell.classList.add('highlight');
+      }
+    }
+  }
+}
+
+function checkGameEnd() {
+  let black=0, white=0;
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      const cell = board.rows[y].cells[x];
+      if (cell.firstChild) {
+        if (cell.firstChild.className==='black') black++;
+        if (cell.firstChild.className==='white' || cell.firstChild.className==='ai') white++;
+      }
+    }
+  }
+  if (black+white === size*size) {
+    let result = '';
+    if (black > white) result='黒の勝ち！';
+    else if (white > black) result='白の勝ち！';
+    else result='引き分け！';
+    document.getElementById('result').textContent = result;
+    document.querySelectorAll('td').forEach(cell => cell.replaceWith(cell.cloneNode(true)));
+  }
+}
+
+createBoard();
+</script>
+</body>
+</html>
