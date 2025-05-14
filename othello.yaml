@@ -1,0 +1,81 @@
+title: オセロAI付きWebアプリ仕様書
+language: ja
+version: 1.0
+
+description: |
+HTMLとJavaScriptで実装した、ブラウザ上で動作するオセロゲーム。
+プレイヤー対AIで対戦し、AIの石は配置時に赤色で表示され、
+2秒後に白に変わる視覚エフェクトを実装。
+
+styles:
+body:
+font-family: sans-serif
+background: '#2c3e50'
+color: '#ecf0f1'
+text-align: center
+margin: '0'
+padding: '30px'
+table:
+border-collapse: collapse
+margin: '20px auto'
+td:
+width: '50px'
+height: '50px'
+background: '#27ae60'
+border: '2px solid #2c3e50'
+cursor: pointer
+black:
+background: black
+border-radius: '50%'
+white:
+background: white
+border-radius: '50%'
+ai:
+background: red
+border-radius: '50%'
+highlight:
+background: '#f1c40f !important'
+
+components:
+
+board: 8x8 オセロ盤のテーブル要素
+
+turnIndicator: 現在の手番表示用タグ
+
+resultIndicator: 勝敗結果表示用タグ
+
+logic:
+createBoard:
+description: ボード生成と初期配置、クリックイベント登録
+putStone:
+description: 指定位置に石を配置
+placeStone:
+description: プレイヤー手番の石配置と反転、AIのターン呼び出し
+aiMove:
+description: 有効手からランダムに選び石を置く。2秒後赤→白化
+getFlippableStones:
+description: 指定座標からひっくり返せる石の座標リスト取得
+highlightValidMoves:
+description: 現在の手番で石を置けるセルを黄色で強調
+checkGameEnd:
+description: 石の数を集計し勝敗判定
+
+animation:
+aiStoneEffect:
+trigger: AIの石配置時
+effect: 配置した石を赤にし、2秒後白に戻す
+
+init:
+
+createBoard
+
+仕様補足:
+
+プレイヤーは黒石、AIは白石を担当
+
+AIが石を置ける場所がない場合、ターンをスキップ
+
+勝敗判定は盤面が埋まるか、両者手が無い場合に行う
+
+石を置けるマスは黄色で強調表示
+
